@@ -11,6 +11,11 @@ datasource db {
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
 enum OpportunityType {
   JOB
   SCHOLARSHIP
@@ -102,6 +107,10 @@ model Opportunity {
 
   translations Translation[]
   savedBy      SavedOpportunity[]
+
+  @@index([status, type])
+  @@index([status, scrapedAt])
+  @@index([status])
 }
 
 /// A Gemini-generated translation of an opportunity
@@ -138,6 +147,8 @@ model User {
   email         String    @unique
   emailVerified DateTime?
   image         String?
+  password      String?
+  role          UserRole  @default(USER)
   preferredLang String    @default("en") // ISO 639-1 code
 
   createdAt DateTime @default(now())
@@ -146,6 +157,7 @@ model User {
   accounts           Account[]
   sessions           Session[]
   savedOpportunities SavedOpportunity[]
+  preferences        UserPreference?
 }
 
 /// OAuth / credential accounts linked to a user (NextAuth)
@@ -204,4 +216,19 @@ model SavedOpportunity {
   savedAt DateTime @default(now())
 
   @@unique([userId, opportunityId])
+}
+
+/// User preferences for personalized feed
+model UserPreference {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  interests      Subject[]
+  preferredTypes OpportunityType[]
+  minAge         Int?
+  maxAge         Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

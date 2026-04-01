@@ -2,16 +2,18 @@ import * as cheerio from 'cheerio';
 
 import { SiteConfig } from '@/lib/sites';
 
-export interface NewsItem {
-  source: string;
+export interface ScrapedItem {
+  sourceName: string;
+  sourceUrl: string;
   title: string;
-  link: string;
-  date: string;
-  excerpt: string;
-  image: string;
+  description: string;
+  originalUrl: string;
+  imageUrl: string | null;
+  originalLang: string;
+  scrapedDate: string;
 }
 
-export const scrapeSite = async (site: SiteConfig): Promise<NewsItem[]> => {
+export const scrapeSite = async (site: SiteConfig): Promise<ScrapedItem[]> => {
   const response = await fetch(site.url, {
     next: { revalidate: 1800 },
     headers: {
@@ -26,7 +28,7 @@ export const scrapeSite = async (site: SiteConfig): Promise<NewsItem[]> => {
 
   const html = await response.text();
   const $ = cheerio.load(html);
-  const items: NewsItem[] = [];
+  const items: ScrapedItem[] = [];
 
   $(site.selectors.articleList).each((_i, el) => {
     const $el = $(el);
@@ -39,28 +41,41 @@ export const scrapeSite = async (site: SiteConfig): Promise<NewsItem[]> => {
     const linkEl = site.selectors.link
       ? $el.find(site.selectors.link).first()
       : $el;
-    const link = linkEl.attr('href') ?? '';
+    const rawLink = linkEl.attr('href') ?? '';
 
-    const date = site.selectors.date
-      ? $el.find(site.selectors.date).first().text().trim()
-      : '';
-
-    const excerpt = site.selectors.excerpt
+    const description = site.selectors.excerpt
       ? $el.find(site.selectors.excerpt).first().text().trim()
       : '';
 
-    const image = site.selectors.image
-      ? $el.find(site.selectors.image).first().attr('src') ?? ''
+    const scrapedDate = site.selectors.date
+      ? $el.find(site.selectors.date).first().text().trim()
       : '';
 
-    if (title && title.length >= 10 && link) {
+    const imgEl = site.selectors.image
+      ? $el.find(site.selectors.image).first()
+      : null;
+    const rawImage = imgEl
+      ? (imgEl.attr('data-lazy-src') ?? imgEl.attr('src') ?? null)
+      : null;
+
+    if (title && title.length >= 10 && rawLink) {
+      const originalUrl = rawLink.startsWith('http')
+        ? rawLink
+        : new URL(rawLink, site.url).href;
+
+      const imageUrl = rawImage && !rawImage.startsWith('http')
+        ? new URL(rawImage, site.url).href
+        : rawImage;
+
       items.push({
-        source: site.name,
+        sourceName: site.name,
+        sourceUrl: site.url,
         title,
-        link: link.startsWith('http') ? link : new URL(link, site.url).href,
-        date,
-        excerpt,
-        image,
+        description,
+        originalUrl,
+        imageUrl,
+        originalLang: site.lang ?? 'mn',
+        scrapedDate,
       });
     }
   });
@@ -70,19 +85,19 @@ export const scrapeSite = async (site: SiteConfig): Promise<NewsItem[]> => {
 
 export const scrapeAllSites = async (
   sitesConfig: SiteConfig[],
-): Promise<NewsItem[]> => {
+): Promise<ScrapedItem[]> => {
   const results = await Promise.allSettled(
     sitesConfig.map((site) => scrapeSite(site)),
   );
 
-  const allItems: NewsItem[] = [];
+  const allItems: ScrapedItem[] = [];
   const seen = new Set<string>();
 
   for (const result of results) {
     if (result.status === 'fulfilled') {
       for (const item of result.value) {
-        if (!seen.has(item.link)) {
-          seen.add(item.link);
+        if (!seen.has(item.originalUrl)) {
+          seen.add(item.originalUrl);
           allItems.push(item);
         }
       }

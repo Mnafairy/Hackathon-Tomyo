@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { filterWithGemini } from '@/lib/gemini-filter';
+import { classifyWithGemini } from '@/lib/gemini-filter';
 import { scrapeAllSites } from '@/lib/scraper';
 import { sites } from '@/lib/sites';
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
-    const filter = searchParams.get('filter') ?? 'technology and research';
     const source = searchParams.get('source');
 
     const sitesToScrape = source
-      ? sites.filter(
-          (s) => s.name.toLowerCase().includes(source.toLowerCase()),
+      ? sites.filter((s) =>
+          s.name.toLowerCase().includes(source.toLowerCase()),
         )
       : sites;
 
@@ -24,15 +23,28 @@ export async function GET(req: NextRequest) {
     }
 
     const allNews = await scrapeAllSites(sitesToScrape);
-    const filtered = await filterWithGemini(allNews, filter);
+    const classified = await classifyWithGemini(allNews);
 
-    const sources = [...new Set(filtered.map((n) => n.source))];
+    const sources = [...new Set(classified.map((n) => n.sourceName))];
 
     return NextResponse.json({
       total: allNews.length,
-      filtered: filtered.length,
+      filtered: classified.length,
       sources,
-      news: filtered,
+      opportunities: classified.map((item) => ({
+        title: item.title,
+        description: item.description,
+        originalUrl: item.originalUrl,
+        imageUrl: item.imageUrl,
+        originalLang: item.originalLang,
+        type: item.type,
+        subjects: item.subjects,
+        minAge: item.minAge,
+        maxAge: item.maxAge,
+        sourceName: item.sourceName,
+        sourceUrl: item.sourceUrl,
+        scrapedDate: item.scrapedDate,
+      })),
     });
   } catch (error) {
     const message =

@@ -10,6 +10,7 @@ export interface SiteSelectors {
 export interface SiteConfig {
   name: string;
   url: string;
+  lang?: string;
   selectors: SiteSelectors;
 }
 
@@ -35,6 +36,32 @@ export const sites: SiteConfig[] = [
       link: '.post-details a[href*="/n/r/"]',
       date: '.text-extra-small.text-medium-gray',
       excerpt: '',
+      image: 'img',
+    },
+  },
+  {
+    name: 'Scholarship Positions',
+    url: 'https://scholarship-positions.com/category/mongolia/',
+    lang: 'en',
+    selectors: {
+      articleList: 'article.post',
+      title: 'h1.entry-title a',
+      link: 'h1.entry-title a',
+      date: '',
+      excerpt: '.entry-content p',
+      image: 'img.wp-post-image',
+    },
+  },
+  {
+    name: 'Scholars4Dev',
+    url: 'https://www.scholars4dev.com/',
+    lang: 'en',
+    selectors: {
+      articleList: '.post.clearfix',
+      title: 'h2 a',
+      link: 'h2 a',
+      date: '',
+      excerpt: 'p',
       image: 'img',
     },
   },
