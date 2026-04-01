@@ -1,0 +1,207 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum OpportunityType {
+  JOB
+  SCHOLARSHIP
+  GRANT
+  INTERNSHIP
+  COMPETITION
+  OTHER
+}
+
+enum OpportunityStatus {
+  ACTIVE
+  EXPIRED
+  UNKNOWN
+}
+
+enum TranslationStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum Subject {
+  STEM
+  SCIENCE
+  TECHNOLOGY
+  ENGINEERING
+  MATHEMATICS
+  ARTS
+  HUMANITIES
+  SOCIAL_SCIENCE
+  BUSINESS
+  LAW
+  MEDICINE
+  COMPUTER_SCIENCE
+  ENVIRONMENT
+  DESIGN
+  EDUCATION
+  OTHER
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+/// A website or feed that is scraped for opportunities
+model ScrapedSource {
+  id            String    @id @default(uuid())
+  name          String
+  url           String    @unique
+  lastScrapedAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  opportunities Opportunity[]
+}
+
+/// A raw opportunity discovered by the scraper
+model Opportunity {
+  id       String        @id @default(uuid())
+  sourceId String
+  source   ScrapedSource @relation(fields: [sourceId], references: [id])
+
+  // Raw data as scraped (original language)
+  title        String
+  description  String
+  originalUrl  String  @unique // prevents duplicate scrapes
+  imageUrl     String?
+  originalLang String  @default("en") // ISO 639-1 code
+
+  type   OpportunityType   @default(OTHER)
+  status OpportunityStatus @default(ACTIVE)
+
+  // Who organizes this opportunity
+  organization String?
+
+  // Age requirement (null = no restriction)
+  minAge Int?
+  maxAge Int?
+
+  // Subject / field of study
+  subjects Subject[]
+
+  deadline DateTime?
+  location String?
+  isRemote Boolean   @default(false)
+  tags     String[]
+
+  scrapedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  translations Translation[]
+  savedBy      SavedOpportunity[]
+}
+
+/// A Gemini-generated translation of an opportunity
+model Translation {
+  id            String      @id @default(uuid())
+  opportunityId String
+  opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  targetLang String // ISO 639-1 code, e.g. "ja", "zh", "id"
+
+  // Translated fields
+  title       String
+  description String
+  summary     String? // Short AI-generated summary
+
+  status       TranslationStatus @default(PENDING)
+  geminiModel  String? // e.g. "gemini-1.5-pro"
+  errorMessage String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([opportunityId, targetLang]) // one translation per language per opportunity
+}
+
+// ─── NextAuth Models ──────────────────────────────────────────────────────────
+// Required by @auth/prisma-adapter
+// See: https://authjs.dev/getting-started/adapters/prisma
+
+/// A user of the application
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  preferredLang String    @default("en") // ISO 639-1 code
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts           Account[]
+  sessions           Session[]
+  savedOpportunities SavedOpportunity[]
+}
+
+/// OAuth / credential accounts linked to a user (NextAuth)
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+/// Active sessions (NextAuth)
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// Email verification tokens (NextAuth)
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+/// Join table: users can bookmark/save opportunities
+model SavedOpportunity {
+  id            String      @id @default(uuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  opportunityId String
+  opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  savedAt DateTime @default(now())
+
+  @@unique([userId, opportunityId])
+}
