@@ -1,8 +1,6 @@
-import { PrismaAdapter } from '@auth/prisma-adapter';
 import bcrypt from 'bcryptjs';
 import { AuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import GoogleProvider from 'next-auth/providers/google';
 
 import { prisma } from '@/lib/prisma';
 
@@ -17,13 +15,14 @@ declare module 'next-auth' {
   }
 }
 
+declare module 'next-auth/jwt' {
+  interface JWT {
+    role?: string;
+  }
+}
+
 export const authOptions: AuthOptions = {
-  adapter: PrismaAdapter(prisma) as AuthOptions['adapter'],
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID ?? '',
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
-    }),
     CredentialsProvider({
       name: 'credentials',
       credentials: {
@@ -54,6 +53,11 @@ export const authOptions: AuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.sub = user.id;
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { role: true },
+        });
+        token.role = dbUser?.role ?? 'USER';
       }
       return token;
     },
