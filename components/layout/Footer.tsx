@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 
 const FOOTER_LINKS = [
@@ -15,15 +16,18 @@ export const Footer = () => {
       <div className="mx-auto flex max-w-7xl flex-col items-center gap-6 px-6 py-14 md:flex-row md:justify-between">
         <div className="flex flex-col items-center gap-3 md:items-start">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-ds-primary/60 to-ds-tertiary/60">
-              <span className="text-xs font-black text-white">L</span>
-            </div>
+            <Image
+              src="/logo.svg"
+              alt="Peony лого"
+              width={56}
+              height={56}
+            />
             <span className="heading-section text-base font-bold text-on-background">
-              Lumina Academy
+              Peony
             </span>
           </div>
           <p className="text-sm text-on-surface-variant/60">
-            © 2025 Lumina Academy. Бүх эрх хуулиар хамгаалагдсан.
+            © 2025 Peony. Бүх эрх хуулиар хамгаалагдсан.
           </p>
         </div>
 

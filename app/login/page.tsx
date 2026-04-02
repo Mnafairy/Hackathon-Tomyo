@@ -4,9 +4,12 @@ import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { TabSwitcher } from '@/features/auth/TabSwitcher';
+import { LoginForm } from '@/features/auth/LoginForm';
+
 type Tab = 'signin' | 'signup';
 
-export default function LoginPage() {
+const LoginPage = () => {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('signin');
   const [name, setName] = useState('');
@@ -93,36 +96,7 @@ export default function LoginPage() {
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-8 shadow-xl">
-          <div className="mb-6 flex rounded-lg border border-border bg-muted p-1">
-            <button
-              type="button"
-              onClick={() => {
-                setTab('signin');
-                setError('');
-              }}
-              className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-                tab === 'signin'
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              Нэвтрэх
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setTab('signup');
-                setError('');
-              }}
-              className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-                tab === 'signup'
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              Бүртгүүлэх
-            </button>
-          </div>
+          <TabSwitcher tab={tab} setTab={setTab} setError={setError} />
 
           {error && (
             <div className="mb-4 rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -130,79 +104,21 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form
-            onSubmit={tab === 'signin' ? handleSignIn : handleSignUp}
-            className="space-y-4"
-          >
-            {tab === 'signup' && (
-              <div>
-                <label
-                  htmlFor="name"
-                  className="mb-1.5 block text-sm font-medium text-foreground"
-                >
-                  Нэр
-                </label>
-                <input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Таны нэр"
-                  className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-              </div>
-            )}
-
-            <div>
-              <label
-                htmlFor="email"
-                className="mb-1.5 block text-sm font-medium text-foreground"
-              >
-                И-мэйл
-              </label>
-              <input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
-                className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="password"
-                className="mb-1.5 block text-sm font-medium text-foreground"
-              >
-                Нууц үг
-              </label>
-              <input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
-            >
-              {loading
-                ? 'Түр хүлээнэ үү...'
-                : tab === 'signin'
-                  ? 'Нэвтрэх'
-                  : 'Бүртгүүлэх'}
-            </button>
-          </form>
+          <LoginForm
+            tab={tab}
+            name={name}
+            setName={setName}
+            email={email}
+            setEmail={setEmail}
+            password={password}
+            setPassword={setPassword}
+            loading={loading}
+            handleSubmit={tab === 'signin' ? handleSignIn : handleSignUp}
+          />
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default LoginPage;

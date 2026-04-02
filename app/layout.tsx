@@ -1,33 +1,33 @@
-import type { Metadata } from 'next';
-import { DM_Sans, Syne } from 'next/font/google';
+import type { Metadata } from "next";
+import { DM_Sans, Syne } from "next/font/google";
 
-import { Providers } from '@/components/providers';
+import { Providers } from "@/components/Providers";
 
-import './globals.css';
+import "./globals.css";
 
 const dmSans = DM_Sans({
-  variable: '--font-dm-sans',
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
+  variable: "--font-dm-sans",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 const syne = Syne({
-  variable: '--font-syne',
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
+  variable: "--font-syne",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
-  title: 'Lumina Academy | Боломжуудын нээлт',
+  title: "Peony | Боломжуудын нээлт",
   description:
-    'Монголын ахлах ангийн сурагчдад зориулсан төсөл, тэмцээн, амжилтын боломжуудын платформ',
+    "Монголын ахлах, дунд ангийн сурагчдад зориулсан төсөл, тэмцээн, амжилтын боломжуудын платформ",
 };
 
-export default function RootLayout({
+const RootLayout = ({
   children,
 }: Readonly<{
   children: React.ReactNode;
-}>) {
+}>) => {
   return (
     <html lang="mn" className={`${dmSans.variable} ${syne.variable} dark`}>
       <body className="noise-overlay min-h-screen bg-background text-foreground antialiased">
@@ -35,4 +35,6 @@ export default function RootLayout({
       </body>
     </html>
   );
-}
+};
+
+export default RootLayout;

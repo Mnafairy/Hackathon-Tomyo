@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { facebookPages, scrapeFacebookPages } from '@/lib/facebook-scraper';
 import { classifyWithGemini } from '@/lib/gemini-filter';
 import { prisma } from '@/lib/prisma';
 import { scrapeAllSites } from '@/lib/scraper';
@@ -16,7 +17,28 @@ export async function GET(req: NextRequest) {
   const errors: string[] = [];
 
   try {
-    const allItems = await scrapeAllSites(sites);
+    // Update stale opportunity statuses before scraping new data
+    await prisma.opportunity.updateMany({
+      where: {
+        deadline: { lt: new Date() },
+        status: { not: 'EXPIRED' },
+      },
+      data: { status: 'EXPIRED' },
+    });
+
+    await prisma.opportunity.updateMany({
+      where: {
+        status: 'UNKNOWN',
+        scrapedAt: { lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+      },
+      data: { status: 'EXPIRED' },
+    });
+
+    const [siteItems, fbItems] = await Promise.all([
+      scrapeAllSites(sites),
+      scrapeFacebookPages(facebookPages),
+    ]);
+    const allItems = [...siteItems, ...fbItems];
     scraped = allItems.length;
 
     const classified = await classifyWithGemini(allItems);
@@ -39,6 +61,8 @@ export async function GET(req: NextRequest) {
             subjects: item.subjects,
             minAge: item.minAge,
             maxAge: item.maxAge,
+            deadline: item.deadline,
+            status: item.status,
             scrapedAt: new Date(),
           },
           create: {
@@ -52,6 +76,8 @@ export async function GET(req: NextRequest) {
             subjects: item.subjects,
             minAge: item.minAge,
             maxAge: item.maxAge,
+            deadline: item.deadline,
+            status: item.status,
           },
         });
 

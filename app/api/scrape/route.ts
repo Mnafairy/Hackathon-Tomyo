@@ -1,17 +1,44 @@
 import { NextResponse } from 'next/server';
 
+import { facebookPages, scrapeFacebookPages } from '@/lib/facebook-scraper';
 import { classifyWithGemini } from '@/lib/gemini-filter';
 import { prisma } from '@/lib/prisma';
 import { scrapeAllSites } from '@/lib/scraper';
 import { sites } from '@/lib/sites';
 
-export async function POST() {
+export async function POST(req: Request) {
+  const authHeader = req.headers.get('authorization');
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const errors: string[] = [];
   let scraped = 0;
   let saved = 0;
 
   try {
-    const allItems = await scrapeAllSites(sites);
+    // Update stale opportunity statuses before scraping new data
+    await prisma.opportunity.updateMany({
+      where: {
+        deadline: { lt: new Date() },
+        status: { not: 'EXPIRED' },
+      },
+      data: { status: 'EXPIRED' },
+    });
+
+    await prisma.opportunity.updateMany({
+      where: {
+        status: 'UNKNOWN',
+        scrapedAt: { lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+      },
+      data: { status: 'EXPIRED' },
+    });
+
+    const [siteItems, fbItems] = await Promise.all([
+      scrapeAllSites(sites),
+      scrapeFacebookPages(facebookPages),
+    ]);
+    const allItems = [...siteItems, ...fbItems];
     scraped = allItems.length;
 
     const classified = await classifyWithGemini(allItems);
@@ -37,6 +64,8 @@ export async function POST() {
             subjects: item.subjects,
             minAge: item.minAge,
             maxAge: item.maxAge,
+            deadline: item.deadline,
+            status: item.status,
             scrapedAt: new Date(),
           },
           create: {
@@ -50,6 +79,8 @@ export async function POST() {
             subjects: item.subjects,
             minAge: item.minAge,
             maxAge: item.maxAge,
+            deadline: item.deadline,
+            status: item.status,
           },
         });
 
@@ -59,24 +90,6 @@ export async function POST() {
         errors.push(`Failed to save "${item.title.substring(0, 50)}": ${msg}`);
       }
     }
-
-    // Mark old opportunities as expired
-    await prisma.opportunity.updateMany({
-      where: {
-        OR: [
-          { title: { contains: '2017' } },
-          { title: { contains: '2018' } },
-          { title: { contains: '2019' } },
-          { title: { contains: '2020' } },
-          { title: { contains: '2021' } },
-          { title: { contains: '2022' } },
-          { title: { contains: '2023' } },
-          { title: { contains: '2024' } },
-        ],
-        status: 'ACTIVE',
-      },
-      data: { status: 'EXPIRED' },
-    });
 
     return NextResponse.json({ scraped, classified: classified.length, saved, errors });
   } catch (error) {

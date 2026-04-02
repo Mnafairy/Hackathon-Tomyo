@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/admin/', '/api/', '/login'],
     },
-    sitemap: 'https://lumina.mn/sitemap.xml',
+    sitemap: 'https://peony.mn/sitemap.xml',
   };
 }

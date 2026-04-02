@@ -11,7 +11,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   });
 
   const opportunityUrls = opportunities.map((opp) => ({
-    url: `https://lumina.mn/discovery/${opp.id}`,
+    url: `https://peony.mn/discovery/${opp.id}`,
     lastModified: opp.updatedAt,
     changeFrequency: 'weekly' as const,
     priority: 0.8,
@@ -19,19 +19,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     {
-      url: 'https://lumina.mn',
+      url: 'https://peony.mn',
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 1,
     },
     {
-      url: 'https://lumina.mn/discovery',
+      url: 'https://peony.mn/discovery',
       lastModified: new Date(),
       changeFrequency: 'daily',
       priority: 0.9,
     },
     {
-      url: 'https://lumina.mn/community',
+      url: 'https://peony.mn/community',
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.7,
