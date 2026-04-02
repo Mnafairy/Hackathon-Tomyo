@@ -4,7 +4,7 @@ import { getToken } from 'next-auth/jwt';
 const PROTECTED_PATHS = ['/saved', '/profile', '/post-project'];
 const ADMIN_PATHS = ['/admin'];
 
-export const middleware = async (req: NextRequest) => {
+export const proxy = async (req: NextRequest) => {
   const { pathname } = req.nextUrl;
 
   const isProtected = PROTECTED_PATHS.some((p) => pathname.startsWith(p));
