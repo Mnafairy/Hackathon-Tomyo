@@ -1,269 +1,282 @@
-import Link from 'next/link';
+'use client';
 
-import type { Metadata } from 'next';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
-export const metadata: Metadata = {
-  title: 'Профайл | Lumina Academy',
-  description: 'Сурагчийн профайл хуудас',
+import { cn } from '@/lib/utils';
+
+interface SavedOpportunity {
+  id: string;
+  title: string;
+  type: string;
+  sourceName: string;
+  originalUrl: string;
+}
+
+const TYPE_LABELS: Record<string, string> = {
+  COMPETITION: 'Тэмцээн',
+  SCHOLARSHIP: 'Тэтгэлэг',
+  GRANT: 'Грант',
+  INTERNSHIP: 'Дадлага',
+  JOB: 'Ажлын байр',
+  OTHER: 'Бусад',
 };
 
-const streakDays = [true, true, true, true, true, true, true];
-const interests = ['STEM', 'Программчлал', 'Математик', 'Физик'];
-
-const goals = [
-  { label: 'Python', progress: 85 },
-  { label: 'Илтгэл', progress: 60 },
-  { label: 'Дизайн', progress: 55 },
-];
-
-const mentors = [
-  { initials: 'ДБ', name: 'Д. Болд', role: 'Математикийн багш' },
-  { initials: 'СО', name: 'С. Оюунаа', role: 'STEM зөвлөх' },
-  { initials: 'МГ', name: 'М. Ганзориг', role: 'IT ментор' },
+const INTEREST_OPTIONS = [
+  'STEM', 'Математик', 'Физик', 'Программчлал',
+  'Биологи', 'Англи хэл', 'Урлаг', 'Бизнес',
 ];
 
 export default function ProfilePage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [interests, setInterests] = useState<string[]>([]);
+  const [recentOpportunities, setRecentOpportunities] = useState<SavedOpportunity[]>([]);
+  const [loadingOpps, setLoadingOpps] = useState(true);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login');
+    }
+  }, [status, router]);
+
+  useEffect(() => {
+    fetch('/api/opportunities?take=4')
+      .then((r) => r.json())
+      .then((data) => {
+        setRecentOpportunities(
+          (data.opportunities ?? []).slice(0, 4).map((o: SavedOpportunity) => ({
+            id: o.id,
+            title: o.title,
+            type: o.type,
+            sourceName: o.sourceName,
+            originalUrl: o.originalUrl,
+          })),
+        );
+        setLoadingOpps(false);
+      })
+      .catch(() => setLoadingOpps(false));
+  }, []);
+
+  const toggleInterest = (interest: string) => {
+    setInterests((prev) =>
+      prev.includes(interest)
+        ? prev.filter((i) => i !== interest)
+        : [...prev, interest],
+    );
+  };
+
+  if (status === 'loading') {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-ds-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (!session?.user) return null;
+
+  const user = session.user;
+  const initial = user.name?.charAt(0)?.toUpperCase()
+    ?? user.email?.charAt(0)?.toUpperCase()
+    ?? '?';
+  const displayName = user.name ?? user.email?.split('@')[0] ?? 'Хэрэглэгч';
+  const email = user.email ?? '';
+  const joinDate = new Date().toLocaleDateString('mn-MN', {
+    year: 'numeric',
+    month: 'long',
+  });
+
   return (
-    <div className="mx-auto max-w-7xl px-6 py-8">
-      {/* Profile Header */}
-      <div className="animate-fade-up delay-0 relative">
-        <div className="relative h-40 overflow-hidden rounded-2xl bg-gradient-to-r from-ds-primary/30 via-ds-tertiary/20 to-ds-secondary/30">
-          <div className="absolute left-10 top-0 h-40 w-40 rounded-full bg-ds-primary/30 blur-3xl" />
-          <div className="absolute right-20 top-4 h-32 w-32 rounded-full bg-ds-tertiary/25 blur-3xl" />
-        </div>
-        <div className="flex items-end justify-between px-2">
-          <div className="flex items-end gap-4">
-            <div className="-mt-12 ml-8 flex h-24 w-24 items-center justify-center rounded-full border-[3px] border-background bg-gradient-to-br from-ds-primary to-ds-tertiary text-2xl font-bold text-white shadow-xl shadow-ds-primary/20">
-              БТ
-            </div>
-            <div className="pb-2">
-              <h1 className="heading-display text-2xl">Б. Тэмүүлэн</h1>
-              <p className="text-sm text-on-surface-variant/70">
-                12-р ангийн сурагч &bull; Шинжлэх ухааны чиглэл
-              </p>
-            </div>
+    <div className="mx-auto max-w-5xl px-6 py-10">
+      {/* ── Profile Header ── */}
+      <section className="animate-fade-up delay-0">
+        <div className="relative overflow-hidden rounded-2xl">
+          {/* Banner */}
+          <div className="h-36 bg-gradient-to-r from-ds-primary/25 via-ds-tertiary/15 to-ds-secondary/25 md:h-44">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(125,147,255,0.12)_0%,transparent_60%)]" />
           </div>
-          <div className="flex gap-2 pb-2">
-            <button className="btn-glow rounded-full bg-gradient-to-r from-ds-primary to-ds-secondary px-5 py-2 text-sm font-medium text-white transition-all hover:opacity-90">
-              Профайл засах
-            </button>
-            <button className="glass-panel rounded-full px-4 py-2 text-sm text-on-surface transition-colors hover:border-ds-primary/50">
-              Хуваалцах
-            </button>
-          </div>
-        </div>
-      </div>
 
-      {/* Stats Row */}
-      <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
-        {/* Curator Stats */}
-        <div className="animate-fade-up delay-1 glass-panel glow-border rounded-2xl p-6">
-          <h3 className="mb-4 text-sm font-semibold text-on-surface-variant">
-            Curator Stats
-          </h3>
-          <div className="flex justify-between text-center">
-            <div>
-              <p className="stat-value heading-section text-3xl">1.2k</p>
-              <p className="mt-1 text-xs text-on-surface-variant">Нөөц</p>
-            </div>
-            <div>
-              <p className="stat-value heading-section text-3xl">48</p>
-              <p className="mt-1 text-xs text-on-surface-variant">Цуглуулга</p>
-            </div>
-            <div>
-              <p className="stat-value heading-section text-3xl">12.5k</p>
-              <p className="mt-1 text-xs text-on-surface-variant">Хүрэлт</p>
-            </div>
-          </div>
-          <div className="mt-4 flex items-center justify-between">
-            <span className="rounded-full border border-ds-primary/20 bg-gradient-to-r from-ds-primary/15 to-ds-secondary/15 px-3 py-1 text-xs font-medium text-ds-primary">
-              Шилдэг 5% Идэвхтэн
-            </span>
-            <span className="text-sm font-semibold text-ds-tertiary">
-              Level 43
-            </span>
-          </div>
-        </div>
-
-        {/* Streak */}
-        <div className="animate-fade-up delay-2 glow-border rounded-2xl border border-ds-primary/15 bg-gradient-to-br from-ds-primary/8 to-ds-secondary/8 p-6">
-          <h3 className="mb-3 text-sm font-semibold text-on-surface-variant">
-            Streak
-          </h3>
-          <p className="heading-display text-gradient-primary text-4xl">124</p>
-          <p className="mt-1 text-sm text-on-surface-variant">
-            Тасралтгүй суралцсан өдөр
-          </p>
-          <div className="mt-4 flex gap-1.5">
-            {streakDays.map((active, i) => (
-              <div
-                key={i}
-                className={`h-4 w-full rounded-md ${active ? 'bg-gradient-to-t from-ds-primary to-ds-secondary' : 'bg-surface-container-highest'}`}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Interests */}
-        <div className="animate-fade-up delay-3 glass-panel glow-border rounded-2xl p-6">
-          <h3 className="mb-4 text-sm font-semibold text-on-surface-variant">
-            Interests
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            {interests.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-lg bg-surface-container-highest/80 px-3 py-1.5 text-xs font-medium text-on-surface/90"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-          <div className="mt-5 flex items-center gap-2">
-            <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface-container-highest">
-              <div className="animate-bar-fill h-full w-[88%] rounded-full bg-gradient-to-r from-ds-secondary to-ds-primary" />
-            </div>
-            <span className="text-sm font-semibold text-ds-secondary">88%</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {/* Left Column */}
-        <div className="space-y-8 lg:col-span-2">
-          {/* Curated Section */}
-          <section>
-            <div className="mb-5 flex items-center justify-between">
-              <h2 className="heading-section accent-line text-lg">
-                Танд зориулсан
-              </h2>
-              <Link
-                href="#"
-                className="text-sm text-ds-primary hover:underline"
-              >
-                Бүгдийг үзэх
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="animate-fade-up delay-4 glass-card glow-border rounded-2xl p-6">
-                <div className="mb-3 flex gap-2">
-                  <span className="rounded-full bg-gradient-to-r from-ds-error to-ds-primary px-2.5 py-0.5 text-xs font-semibold text-white">
-                    ШИНЭ
-                  </span>
-                  <span className="rounded-full bg-surface-container-highest px-2.5 py-0.5 text-xs font-medium text-on-surface-variant">
-                    Тэмцээн
-                  </span>
+          {/* Avatar + Info row */}
+          <div className="relative -mt-14 px-6 pb-6 md:px-10">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+              <div className="flex items-end gap-4">
+                <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl border-4 border-background bg-gradient-to-br from-ds-primary to-ds-tertiary text-3xl font-black text-white shadow-xl shadow-ds-primary/20">
+                  {initial}
                 </div>
-                <h3 className="font-semibold text-on-surface">
-                  Математикийн олимпиадын бэлтгэл
-                </h3>
-                <p className="mt-1.5 text-sm text-on-surface-variant">
-                  12 цаг &bull; Дунд түвшин
-                </p>
-              </div>
-              <div className="animate-fade-up delay-5 glass-card glow-border rounded-2xl p-6">
-                <div className="mb-3">
-                  <span className="rounded-full bg-surface-container-highest px-2.5 py-0.5 text-xs font-medium text-on-surface-variant">
-                    Хөтөлбөр
-                  </span>
+                <div className="pb-1">
+                  <h1 className="heading-display text-2xl font-bold tracking-tight md:text-3xl">
+                    {displayName}
+                  </h1>
+                  <p className="mt-0.5 text-sm text-on-surface-variant">
+                    {email}
+                  </p>
+                  <p className="mt-0.5 text-xs text-on-surface-variant/60">
+                    {joinDate}-с хойш нэгдсэн
+                  </p>
                 </div>
-                <h3 className="font-semibold text-on-surface">
-                  AI-ийн үндэс: Програмчлалын сургалт
-                </h3>
-                <p className="mt-1.5 text-sm text-on-surface-variant">
-                  8 цаг &bull; Анхан шат
-                </p>
               </div>
             </div>
-          </section>
+          </div>
+        </div>
+      </section>
 
-          {/* Activity Timeline */}
-          <section className="animate-fade-up delay-6">
-            <h2 className="heading-section accent-line mb-5 text-lg">
-              Сүүлийн үйл ажиллагаа
+      {/* ── Main Grid ── */}
+      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-5">
+        {/* Left — wider */}
+        <div className="space-y-6 lg:col-span-3">
+          {/* Interests */}
+          <section className="animate-fade-up delay-1 glass-panel glow-border rounded-2xl p-6">
+            <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-on-surface-variant/60">
+              Сонирхлын чиглэлүүд
             </h2>
-            <div className="space-y-0 border-l-2 border-ds-primary/30 pl-6">
-              <div className="relative pb-6">
-                <div className="absolute -left-[31px] top-1 h-3.5 w-3.5 rounded-full bg-gradient-to-br from-ds-primary to-ds-secondary ring-4 ring-background" />
-                <p className="font-medium text-on-surface">
-                  Математикийн олимпиадын бэлтгэл цуглуулга нэмсэн
-                </p>
-                <p className="text-sm text-on-surface-variant">
-                  2 цагийн өмнө
-                </p>
-              </div>
-              <div className="relative pb-2">
-                <div className="absolute -left-[31px] top-1 h-3.5 w-3.5 rounded-full bg-gradient-to-br from-ds-secondary to-ds-tertiary ring-4 ring-background" />
-                <p className="font-medium text-on-surface">
-                  STEM шилдэг 50 тэмдэг авсан
-                </p>
-                <p className="text-sm text-on-surface-variant">Өчигдөр</p>
-              </div>
+            <div className="flex flex-wrap gap-2">
+              {INTEREST_OPTIONS.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => toggleInterest(tag)}
+                  className={cn(
+                    'rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200',
+                    interests.includes(tag)
+                      ? 'bg-gradient-to-r from-ds-primary/25 to-ds-secondary/25 text-ds-primary ring-1 ring-ds-primary/30'
+                      : 'bg-surface-container-highest/60 text-on-surface-variant hover:bg-surface-container-highest',
+                  )}
+                >
+                  {tag}
+                </button>
+              ))}
             </div>
+            {interests.length > 0 && (
+              <p className="mt-4 text-xs text-on-surface-variant/50">
+                {interests.length} чиглэл сонгосон
+              </p>
+            )}
+          </section>
+
+          {/* Recommended Opportunities */}
+          <section className="animate-fade-up delay-2">
+            <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-on-surface-variant/60">
+              Сүүлийн боломжууд
+            </h2>
+            {loadingOpps ? (
+              <div className="space-y-3">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="glass-card animate-pulse rounded-xl p-4">
+                    <div className="h-4 w-3/4 rounded bg-surface-container-highest" />
+                    <div className="mt-2 h-3 w-1/3 rounded bg-surface-container-highest" />
+                  </div>
+                ))}
+              </div>
+            ) : recentOpportunities.length > 0 ? (
+              <div className="space-y-3">
+                {recentOpportunities.map((opp, i) => (
+                  <a
+                    key={opp.id}
+                    href={opp.originalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={cn(
+                      'glass-card glow-border animate-fade-up group flex items-center justify-between rounded-xl p-4',
+                      `delay-${i + 3}`,
+                    )}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-sm font-semibold text-on-surface group-hover:text-ds-primary transition-colors">
+                        {opp.title}
+                      </h3>
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className="rounded-md bg-ds-primary/15 px-2 py-0.5 text-[10px] font-bold text-ds-primary">
+                          {TYPE_LABELS[opp.type] ?? opp.type}
+                        </span>
+                        <span className="text-xs text-on-surface-variant/50">
+                          {opp.sourceName}
+                        </span>
+                      </div>
+                    </div>
+                    <svg
+                      className="ml-3 h-4 w-4 shrink-0 text-on-surface-variant/30 group-hover:text-ds-primary transition-colors"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <div className="glass-panel rounded-xl p-6 text-center">
+                <p className="text-sm text-on-surface-variant">
+                  Боломж олдсонгүй. Боломжууд хуудаснаас хайна уу.
+                </p>
+              </div>
+            )}
           </section>
         </div>
 
-        {/* Right Column */}
-        <div className="space-y-6">
-          {/* Goals */}
-          <div className="glass-panel glow-border rounded-2xl p-6">
-            <h3 className="mb-4 font-semibold text-on-background">
-              Идэвхтэй зорилтууд
+        {/* Right sidebar */}
+        <div className="space-y-6 lg:col-span-2">
+          {/* Account Info Card */}
+          <div className="animate-fade-up delay-2 glass-panel glow-border rounded-2xl p-6">
+            <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-on-surface-variant/60">
+              Бүртгэлийн мэдээлэл
             </h3>
             <div className="space-y-4">
-              {goals.map((goal, i) => (
-                <div key={goal.label}>
-                  <div className="mb-1.5 flex justify-between text-sm">
-                    <span className="font-medium text-on-surface">
-                      {goal.label}
-                    </span>
-                    <span className="text-on-surface-variant">
-                      {goal.progress}%
-                    </span>
-                  </div>
-                  <div className="h-2.5 overflow-hidden rounded-full bg-surface-container-highest">
-                    <div
-                      className={`animate-bar-fill h-full rounded-full bg-gradient-to-r from-ds-primary to-ds-tertiary delay-${i + 4}`}
-                      style={{ width: `${goal.progress}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/40">
+                  Нэр
+                </p>
+                <p className="mt-0.5 text-sm font-medium text-on-surface">
+                  {user.name ?? '—'}
+                </p>
+              </div>
+              <div className="h-px bg-outline-variant/20" />
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/40">
+                  Имэйл
+                </p>
+                <p className="mt-0.5 text-sm font-medium text-on-surface">
+                  {email}
+                </p>
+              </div>
+              <div className="h-px bg-outline-variant/20" />
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant/40">
+                  Бүртгүүлсэн
+                </p>
+                <p className="mt-0.5 text-sm font-medium text-on-surface">
+                  {joinDate}
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Mentors */}
-          <div className="glass-panel glow-border rounded-2xl p-6">
-            <h3 className="mb-4 font-semibold text-on-background">
-              Шилдэг зөвлөхүүд
+          {/* Quick Links */}
+          <div className="animate-fade-up delay-3 rounded-2xl border border-ds-primary/10 bg-gradient-to-br from-ds-primary/5 to-ds-tertiary/5 p-6">
+            <h3 className="mb-3 text-sm font-bold uppercase tracking-widest text-on-surface-variant/60">
+              Шуурхай холбоос
             </h3>
-            <div className="space-y-3">
-              {mentors.map((m) => (
-                <div key={m.name} className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-ds-tertiary/20 to-ds-primary/20 text-sm font-semibold text-ds-tertiary">
-                    {m.initials}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-on-surface">
-                      {m.name}
-                    </p>
-                    <p className="text-xs text-on-surface-variant">{m.role}</p>
-                  </div>
-                </div>
-              ))}
+            <div className="space-y-2">
+              <a
+                href="/discovery"
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-on-surface transition-colors hover:bg-ds-primary/10 hover:text-ds-primary"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                Боломж хайх
+              </a>
+              <a
+                href="/community"
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-on-surface transition-colors hover:bg-ds-primary/10 hover:text-ds-primary"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Нийгэмлэг
+              </a>
             </div>
-          </div>
-
-          {/* Daily Challenge */}
-          <div className="rounded-2xl border border-ds-primary/15 bg-gradient-to-br from-ds-primary/10 via-ds-secondary/5 to-ds-tertiary/10 p-6">
-            <h3 className="font-semibold text-on-background">Өдрийн сорилт</h3>
-            <p className="mt-2 text-sm text-on-surface-variant">
-              CSS Grid-ийн 12 баганат загварыг ойлгох
-            </p>
-            <button className="btn-glow mt-4 rounded-full bg-gradient-to-r from-ds-primary to-ds-secondary px-5 py-2 text-sm font-medium text-white transition-all hover:opacity-90">
-              Сорилт эхлүүлэх
-            </button>
           </div>
         </div>
       </div>

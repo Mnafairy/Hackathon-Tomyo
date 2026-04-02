@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
     const type = searchParams.get('type') as OpportunityType | null;
-    const subject = searchParams.get('subject') as Subject | null;
+    const subject = searchParams.get('subject');
     const search = searchParams.get('search');
 
     const where: Record<string, unknown> = {
@@ -19,7 +19,8 @@ export async function GET(req: NextRequest) {
     }
 
     if (subject) {
-      where.subjects = { has: subject };
+      const subjects = subject.split(',') as Subject[];
+      where.subjects = { hasSome: subjects };
     }
 
     if (search) {

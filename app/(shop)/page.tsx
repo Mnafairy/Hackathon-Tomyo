@@ -38,13 +38,6 @@ const features = [
   },
 ];
 
-const stats = [
-  { value: '500+', label: 'Сурагчид' },
-  { value: '120+', label: 'Боломжууд' },
-  { value: '94%', label: 'Амжилт' },
-  { value: '15+', label: 'Хичээл' },
-];
-
 export default function HomePage() {
   return (
     <>
@@ -147,26 +140,6 @@ export default function HomePage() {
               </h3>
               <p className="mt-3 leading-relaxed text-on-surface-variant/80">
                 {feature.description}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="relative border-y border-outline-variant/10 bg-surface-container-low py-24">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(125,147,255,0.05)_0%,transparent_70%)]" />
-        <div className="relative mx-auto grid max-w-6xl grid-cols-2 gap-10 px-6 md:grid-cols-4">
-          {stats.map((stat, i) => (
-            <div
-              key={stat.label}
-              className={`animate-fade-up delay-${i} text-center`}
-            >
-              <p className="stat-value heading-display text-5xl font-black md:text-6xl">
-                {stat.value}
-              </p>
-              <p className="mt-3 text-xs font-medium uppercase tracking-[0.2em] text-on-surface-variant">
-                {stat.label}
               </p>
             </div>
           ))}

@@ -85,12 +85,12 @@ const DiscoveryPage = () => {
   const [search, setSearch] = useState('');
 
   const fetchData = useCallback(
-    (type: string | null, query: string, subject: string | null) => {
+    (type: string | null, query: string, subjects: string[]) => {
       setLoading(true);
       const params = new URLSearchParams();
       if (type) params.set('type', type);
       if (query) params.set('search', query);
-      if (subject) params.set('subject', subject);
+      if (subjects.length > 0) params.set('subject', subjects.join(','));
 
       fetch(`/api/opportunities?${params}`)
         .then((res) => res.json())
@@ -105,7 +105,7 @@ const DiscoveryPage = () => {
   );
 
   useEffect(() => {
-    fetchData(null, '', null);
+    fetchData(null, '', []);
   }, [fetchData]);
 
   const toggleSubject = (subject: string) => {
@@ -119,25 +119,22 @@ const DiscoveryPage = () => {
   const handleTypeToggle = (type: string) => {
     const next = activeType === type ? null : type;
     setActiveType(next);
-    const sub = checkedSubjects.length === 1 ? checkedSubjects[0] : null;
-    fetchData(next, search, sub);
+    fetchData(next, search, checkedSubjects);
   };
 
   const handleSearch = () => {
-    const sub = checkedSubjects.length === 1 ? checkedSubjects[0] : null;
-    fetchData(activeType, search, sub);
+    fetchData(activeType, search, checkedSubjects);
   };
 
   const applyFilters = () => {
-    const sub = checkedSubjects.length === 1 ? checkedSubjects[0] : null;
-    fetchData(activeType, search, sub);
+    fetchData(activeType, search, checkedSubjects);
   };
 
   const handleScrape = async () => {
     setScraping(true);
     try {
       await fetch('/api/scrape', { method: 'POST' });
-      fetchData(activeType, search, null);
+      fetchData(activeType, search, checkedSubjects);
     } finally {
       setScraping(false);
     }

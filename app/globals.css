@@ -143,6 +143,72 @@
   --sidebar-ring: #ff7ac5;
 }
 
+.light {
+  --background: #fef7fc;
+  --foreground: #1a0518;
+
+  --surface: #fef7fc;
+  --surface-container: #f8eef5;
+  --surface-container-low: #fbf3f9;
+  --surface-container-high: #f2e5ef;
+  --surface-container-highest: #ecdce8;
+  --surface-bright: #fef7fc;
+  --on-surface: #1a0518;
+  --on-surface-variant: #6b4562;
+  --on-background: #1a0518;
+
+  --ds-outline: #9e7595;
+  --outline-variant: #d4b5cc;
+
+  --ds-primary: #cb3e99;
+  --ds-primary-container: #ffd7ee;
+  --on-primary: #ffffff;
+  --on-primary-fixed: #000000;
+  --on-primary-container: #3d002a;
+
+  --ds-secondary: #ae56a7;
+  --secondary-container: #f3d5ef;
+  --on-secondary-container: #3d0039;
+
+  --ds-tertiary: #5770d5;
+  --tertiary-container: #dde1ff;
+  --on-tertiary-container: #001452;
+
+  --ds-error: #ba1a1a;
+
+  --card: #ffffff;
+  --card-foreground: #1a0518;
+  --popover: #ffffff;
+  --popover-foreground: #1a0518;
+  --primary: #cb3e99;
+  --primary-foreground: #ffffff;
+  --secondary: #f2e5ef;
+  --secondary-foreground: #1a0518;
+  --muted: #f2e5ef;
+  --muted-foreground: #6b4562;
+  --accent: #f8eef5;
+  --accent-foreground: #1a0518;
+  --destructive: #ba1a1a;
+  --border: #d4b5cc;
+  --input: #d4b5cc;
+  --ring: #cb3e99;
+
+  --chart-1: #cb3e99;
+  --chart-2: #ae56a7;
+  --chart-3: #5770d5;
+  --chart-4: #7d93ff;
+  --chart-5: #9e7595;
+
+  --sidebar: #fbf3f9;
+  --sidebar-foreground: #1a0518;
+  --sidebar-primary: #cb3e99;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f2e5ef;
+  --sidebar-accent-foreground: #1a0518;
+  --sidebar-border: #d4b5cc;
+  --sidebar-ring: #cb3e99;
+}
+
 /* ========== ANIMATIONS ========== */
 
 @keyframes fade-up {
@@ -269,6 +335,41 @@
   border-color: rgba(255, 122, 197, 0.25);
   box-shadow: 0 8px 40px rgba(255, 122, 197, 0.08), 0 2px 20px rgba(0, 0, 0, 0.3);
   transform: translateY(-2px);
+}
+
+.light .glass-panel {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(248, 238, 245, 0.6));
+  border-color: rgba(203, 62, 153, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.light .glass-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.7), rgba(248, 238, 245, 0.5));
+  border-color: rgba(203, 62, 153, 0.08);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.05);
+}
+
+.light .glass-card:hover {
+  border-color: rgba(203, 62, 153, 0.25);
+  box-shadow: 0 8px 40px rgba(203, 62, 153, 0.08), 0 2px 20px rgba(0, 0, 0, 0.05);
+}
+
+.light .noise-overlay::after {
+  opacity: 0;
+}
+
+.light .stat-value {
+  background: linear-gradient(135deg, #cb3e99, #ae56a7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.light .text-gradient-primary {
+  background: linear-gradient(135deg, #cb3e99, #ae56a7, #5770d5);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 /* Glow border effect */
